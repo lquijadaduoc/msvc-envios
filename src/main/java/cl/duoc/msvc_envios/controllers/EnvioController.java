@@ -5,6 +5,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 import cl.duoc.msvc_envios.model.Envio;
 import cl.duoc.msvc_envios.services.EnvioService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.HashMap;
 import java.util.List;
@@ -23,6 +30,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 @RestController
 @RequestMapping("/api/v1/envios")
+@Tag(name = "Api V1 de enviod", description = "Operaciones relacionadas con los envios")
 public class EnvioController {
     
     @Autowired
@@ -30,8 +38,14 @@ public class EnvioController {
 
     private static final Logger logger = LoggerFactory.getLogger(EnvioController.class);
 
+    @Operation(summary = "Obtener producto por ID")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", 
+                     description = "Envio encontrado",
+                     content = @Content(mediaType = "application/json",schema = @Schema(implementation = Envio.class))
+                    )})
     @GetMapping("/{id}")
-    public ResponseEntity<?> buscarPorId(@PathVariable Integer id) {
+    public ResponseEntity<?> buscarPorId(@Parameter(description = "Id del producto",required = true, example = "5")@PathVariable Integer id) {
         Optional<Envio> envioOptional = service.buscarporId(id);
         if (envioOptional.isPresent()) {
             return ResponseEntity.ok(envioOptional.orElseThrow());
@@ -39,14 +53,19 @@ public class EnvioController {
         return ResponseEntity.notFound().build();
     }
 
+    @Operation(summary = "Obtener producto por ID")
+    @ApiResponse(responseCode = "200", description = "ENvio encontrado", content = @Content(mediaType = "application/json", schema = @Schema(implementation = Envio.class)))
+
     @GetMapping
     public List<Envio> listaEnvios() {
         return service.listaEnvios();
     }
     
+    @Operation(summary = "Crear Envio")
+    @ApiResponse(responseCode = "201", description = "Envio creado", content = @Content(mediaType = "application/json", schema = @Schema(implementation = Envio.class)))
     @PostMapping
     public ResponseEntity<?> crearEnvio(@RequestBody Envio envio) {
-        logger.info("numero venta {}", envio.getNumeroVenta());
+        //logger.info("numero venta {}", envio.getNumeroVenta());
         Optional<Envio> envioOptional = service.buscarporId(envio.getNumeroVenta());
         
         if (envioOptional.isPresent()) {
