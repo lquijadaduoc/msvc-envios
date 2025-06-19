@@ -1,70 +1,87 @@
 package cl.duoc.msvc_envios.service;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.util.Optional;
-
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 import cl.duoc.msvc_envios.model.Envio;
 import cl.duoc.msvc_envios.repositories.EnvioRepository;
 import cl.duoc.msvc_envios.services.EnvioService;
 
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+
 @ExtendWith(MockitoExtension.class)
-public class EnvioServiceTest {
-    
+class EnvioServiceTest {
 
     @Mock
-    private EnvioRepository repository;
+    private EnvioRepository envioRepository;
 
     @InjectMocks
-    private EnvioService service;
+    private EnvioService envioService;
 
-    Envio prod =  new Envio(1,"Luis Quijada" ,"lquijada@duocuc.cl",
-    "84-535-9199", "","ENVIADA",3);
+    private Envio envio;
 
-
-    @Test
-    void traerEnvio_RespuestaOk(){
-
-    Integer id = 1;
-
-    when(repository.findById(id)).thenReturn(Optional.of(prod)); 
-
-    Optional<Envio> resultado = service.buscarporId(1);
-
-    assertEquals(prod.getNumeroVenta(), resultado.get().getNumeroVenta());
-
+    @BeforeEach
+    void setearClase() {
+        envio = new Envio();
+        envio.setNumeroVenta(1001);
+        envio.setNombreCliente("Bob Marley");
+        envio.setCorreoCliente("bob@example.com");
+        envio.setTelefonoCliente("123456789");
+        envio.setDireccion("Calle Falsa 123");
+        envio.setEstadoEnvio("En tránsito");
+        envio.setIdUsuario(10);
     }
 
     @Test
-    void traerEnvioInexistente() {
+    void testListaEnvios() {
+        when(envioRepository.findAll()).thenReturn(Arrays.asList(envio));
 
-        when(repository.findById(1)).thenReturn(Optional.empty());
+        List<Envio> resultado = envioService.listaEnvios();
 
-        Optional<Envio> resultado = service.buscarporId(1);
-
-        assertTrue(resultado.isEmpty(), "Se esperaba un Optional vacío");
-        verify(repository).findById(1);
-
+        assertEquals(1, resultado.size());
+        assertEquals("Juan Pérez", resultado.get(0).getNombreCliente());
+        verify(envioRepository).findAll();
     }
 
     @Test
-    void cargarEnvioTest(){
-        when(repository.save(any(Envio.class))).thenReturn(prod);
+    void testBuscarPorIdExistente() {
+        when(envioRepository.findById(1001)).thenReturn(Optional.of(envio));
 
-        Envio resultado = service.cargarEnvio(prod);
+        Optional<Envio> resultado = envioService.buscarporId(1001);
 
-        assert resultado != null;
-        verify(repository).save(resultado);
+        assertTrue(resultado.isPresent());
+        assertEquals("En tránsito", resultado.get().getEstadoEnvio());
+        verify(envioRepository).findById(1001);
+    }
 
+    @Test
+    void testBuscarPorIdNoExistente() {
+        when(envioRepository.findById(9999)).thenReturn(Optional.empty());
+
+        Optional<Envio> resultado = envioService.buscarporId(9999);
+
+        assertFalse(resultado.isPresent());
+        verify(envioRepository).findById(9999);
+    }
+
+    @Test
+    void testCargarEnvio() {
+        when(envioRepository.save(envio)).thenReturn(envio);
+
+        Envio resultado = envioService.cargarEnvio(envio);
+
+        assertNotNull(resultado);
+        assertEquals(1001, resultado.getNumeroVenta());
+        verify(envioRepository).save(envio);
     }
 }
